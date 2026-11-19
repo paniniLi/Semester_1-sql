@@ -4,3 +4,4 @@ pgdata/
 .idea/
 .vscode/
 .DS_Store
+/.codex/
