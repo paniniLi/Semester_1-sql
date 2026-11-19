@@ -6,11 +6,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 CREATE TABLE tariff_plans (
     tariff_plan_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    status TEXT NOT NULL DEFAULT 'active',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    -- доступные статусы тарифного плана: активен, неактивен
-    CONSTRAINT tariff_plans_status_check CHECK (status IN ('active', 'inactive'))
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tariff_prices (
