@@ -1,0 +1,121 @@
+Project coworking {
+  database_type: 'PostgreSQL'
+  Note: '''Система бронирования коворкинга.'''
+}
+
+Table users [note: 'Пользователи. Должен быть заполнен хотя бы один контакт: телефон или почта. Пустые строки и строки из одних пробелов не считаются заполненными контактами.'] {
+  user_id bigint [pk, increment, note: 'ID пользователя']
+  login text [not null, unique, note: 'Логин пользователя']
+  full_name text [not null, note: 'ФИО пользователя']
+  phone text [null, note: 'Контактный номер телефона.']
+  email text [null, note: 'Электронная почта.']
+
+  checks {
+    `NULLIF(BTRIM(phone), '') IS NOT NULL OR NULLIF(BTRIM(email), '') IS NOT NULL` [name: 'users_at_least_one_contact_check']
+  }
+}
+
+Table roles [note: 'Роли'] {
+  role_id bigint [pk, increment, note: 'ID роли']
+  name text [not null, note: 'Название роли']
+}
+
+Table user_roles [note: 'Роли пользователей.'] {
+  role_id bigint [not null, note: 'ID роли']
+  user_id bigint [not null, note: 'ID пользователя, получившего роль']
+  assigned_by bigint [not null, note: 'ID пользователя, присвоившего роль']
+  valid_from timestamptz [not null, note: 'Дата начала действия роли']
+  valid_to timestamptz [not null, default: 'infinity', note: 'Дата окончания действия роли; infinity — без ограничения срока']
+}
+
+Table tariff_plans [note: 'Тарифные планы'] {
+  tariff_plan_id bigint [pk, increment]
+  name text [not null, unique, note: 'Название тарифного плана']
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table tariff_prices [note: 'История изменения цен тарифных планов.'] {
+  tariff_price_id bigint [pk, increment, note: 'ID записи истории изменения цены']
+  tariff_plan_id bigint [not null]
+  price numeric(12,2) [not null, note: 'Цена']
+  price_unit text [not null, note: 'Единица измерения цены']
+  valid_from timestamptz [not null]
+  valid_to timestamptz [not null, default: 'infinity']
+  assigned_by bigint [not null, note: 'ID пользователя, внесшего цену']
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table coworking_sections [note: 'Секции коворкинга'] {
+  section_id bigint [pk, increment]
+  name text [not null, note: 'Название секции']
+  building text [not null, note: 'Здание коворкинга']
+  floor integer [not null, note: 'Этаж коворкинга']
+}
+
+Table coworking_places [note: 'Места коворкинга'] {
+  place_id bigint [pk, increment]
+  name text [not null, note: 'Название места']
+  section_id bigint [not null]
+  status text [not null, note: 'Доступно, закрыто на обслуживание']
+  characteristics jsonb [null, note: 'Характеристики, включая доступное оборудование. Например: {"equipment": ["monitor", "docking_station"]}']
+}
+
+Table bookings [note: 'Бронирования.'] {
+  booking_id bigint [pk, increment]
+  user_id bigint [not null]
+  place_id bigint [not null]
+  starts_at timestamptz [not null, note: 'Начало действия бронирования']
+  ends_at timestamptz [not null, note: 'Окончание действия бронирования']
+  status text [not null, note: 'Действителен, в ожидании оплаты, отменен']
+  total_price numeric(12,2) [not null, note: 'Итоговая стоимость бронирования']
+  arrived_at timestamptz [null, note: 'Дата и время прихода; NULL — приход не зарегистрирован']
+  departed_at timestamptz [null, note: 'Дата и время ухода. По истечении бронирования заполняется временем его окончания, если приход зарегистрирован, а уход не зарегистрирован.']
+}
+
+Table place_tariff_assignments [note: 'Назначения тарифов местам. При одновременном задании тарифного плана на секцию и на место приоритет отдается тарифному плану места.'] {
+  assignment_id bigint [pk, increment]
+  tariff_plan_id bigint [not null]
+  place_id bigint [not null]
+  starts_at timestamptz [not null, note: 'Дата начала действия тарифного плана на месте']
+  ends_at timestamptz [not null, note: 'Дата окончания действия тарифного плана на секции', default: 'infinity']
+  assigned_by bigint [not null, note: 'ID пользователя, назначившего тариф']
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table section_tariff_assignments [note: 'Назначения тарифов секциям.'] {
+  assignment_id bigint [pk, increment]
+  tariff_plan_id bigint [not null]
+  section_id bigint [not null]
+  starts_at timestamptz [not null, note: 'Дата начала действия тарифного плана на секции']
+  ends_at timestamptz [not null, note: 'Дата окончания действия тарифного плана на секции', default: 'infinity']
+  assigned_by bigint [not null, note: 'ID пользователя, назначившего тариф']
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table payments [note: 'Платежи.'] {
+  payment_id bigint [pk, increment]
+  booking_id bigint [not null, note: 'ID бронирования. На одно бронирование может быть создано более чем 1 попытка платежа.']
+  amount numeric(12,2) [not null, note: 'Сумма платежа']
+  status text [not null, note: 'Статус платежа']
+  created_at timestamptz [not null, note: 'Дата создания платежа', default: `CURRENT_TIMESTAMP`]
+  paid_at timestamptz [null, note: 'Дата успешной оплаты']
+}
+
+// Пользователь получает одну или несколько ролей; роль может быть никому не назначена.
+Ref roles_of_user: user_roles.user_id > users.user_id
+Ref users_of_role: user_roles.role_id ?> roles.role_id
+Ref role_granted_by: user_roles.assigned_by ?> users.user_id
+
+// Родитель может существовать без дочерних записей; дочерняя запись требует родителя.
+Ref price_history: tariff_prices.tariff_plan_id ?> tariff_plans.tariff_plan_id
+Ref price_author: tariff_prices.assigned_by ?> users.user_id
+Ref places_of_section: coworking_places.section_id ?> coworking_sections.section_id
+Ref user_bookings: bookings.user_id ?> users.user_id
+Ref place_bookings: bookings.place_id ?> coworking_places.place_id
+Ref place_assignment_tariff: place_tariff_assignments.tariff_plan_id ?> tariff_plans.tariff_plan_id
+Ref place_assignment_target: place_tariff_assignments.place_id ?> coworking_places.place_id
+Ref place_assignment_author: place_tariff_assignments.assigned_by ?> users.user_id
+Ref section_assignment_tariff: section_tariff_assignments.tariff_plan_id ?> tariff_plans.tariff_plan_id
+Ref section_assignment_target: section_tariff_assignments.section_id ?> coworking_sections.section_id
+Ref section_assignment_author: section_tariff_assignments.assigned_by ?> users.user_id
+Ref booking_payments: payments.booking_id ?> bookings.booking_id
