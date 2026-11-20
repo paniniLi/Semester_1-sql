@@ -15,7 +15,9 @@ CREATE TABLE tariff_prices (
     price NUMERIC(12, 2) NOT NULL,
     price_unit TEXT NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
-    valid_to TIMESTAMPTZ NOT NULL DEFAULT '2999-12-31 00:00:00+03',
+    valid_to TIMESTAMPTZ NOT NULL DEFAULT 'infinity',
+    -- Внешний ключ для автора цены следует добавить после создания таблицы пользователей.
+    assigned_by BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- внешний ключ на tariff_plans с запретом физического удаления тарифного плана, пока на него ссылается запись из текущей таблицы
@@ -47,7 +49,7 @@ CREATE TABLE section_tariff_assignments (
     tariff_plan_id BIGINT NOT NULL,
     section_id BIGINT NOT NULL,
     starts_at TIMESTAMPTZ NOT NULL,
-    ends_at TIMESTAMPTZ NOT NULL,
+    ends_at TIMESTAMPTZ NOT NULL DEFAULT 'infinity',
     assigned_by BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

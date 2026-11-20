@@ -13,10 +13,11 @@ SELECT * FROM tariff_plans;
 SELECT * FROM coworking_sections;
 
 -- 4. Негативный тест: ожидается ошибка
-INSERT INTO tariff_prices (tariff_plan_id, price, price_unit, valid_from)
+INSERT INTO tariff_prices (tariff_plan_id, price, price_unit, valid_from, assigned_by)
 VALUES (
     (SELECT COALESCE(MAX(tariff_plan_id), 0) + 1 FROM tariff_plans),
     150.00,
     'hour',
-    CURRENT_TIMESTAMP
+    CURRENT_TIMESTAMP,
+    1 -- ID пользователя, внёсшего цену; таблица пользователей пока не создана
 );
