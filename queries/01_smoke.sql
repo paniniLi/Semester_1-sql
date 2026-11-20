@@ -5,8 +5,8 @@ SELECT version();
 INSERT INTO tariff_plans (name)
 VALUES ('Демонстрационный тариф');
 
-INSERT INTO coworking_sections (name, building, floor)
-VALUES ('Открытая рабочая зона', 'Главный корпус', 1);
+INSERT INTO coworking_sections (name)
+VALUES ('Открытая рабочая зона');
 
 -- 3. Чтение
 SELECT * FROM tariff_plans;
