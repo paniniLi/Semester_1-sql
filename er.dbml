@@ -21,11 +21,16 @@ Table roles [note: 'Роли'] {
 }
 
 Table user_roles [note: 'Роли пользователей.'] {
+  user_role_id bigint [pk, increment, not null, note: 'ID назначения роли пользователю']
   role_id bigint [not null, note: 'ID роли']
   user_id bigint [not null, note: 'ID пользователя, получившего роль']
   assigned_by bigint [not null, note: 'ID пользователя, присвоившего роль']
   valid_from timestamptz [not null, note: 'Дата начала действия роли']
   valid_to timestamptz [not null, default: 'infinity', note: 'Дата окончания действия роли; infinity — без ограничения срока']
+
+  indexes {
+    (role_id, user_id) [unique, name: 'user_roles_role_user_key']
+  }
 }
 
 Table tariff_plans [note: 'Тарифные планы'] {
@@ -48,8 +53,6 @@ Table tariff_prices [note: 'История изменения цен тариф�
 Table coworking_sections [note: 'Секции коворкинга'] {
   section_id bigint [pk, increment]
   name text [not null, note: 'Название секции']
-  building text [not null, note: 'Здание коворкинга']
-  floor integer [not null, note: 'Этаж коворкинга']
 }
 
 Table coworking_places [note: 'Места коворкинга'] {
@@ -58,6 +61,10 @@ Table coworking_places [note: 'Места коворкинга'] {
   section_id bigint [not null]
   status text [not null, note: 'Доступно, закрыто на обслуживание']
   characteristics jsonb [null, note: 'Характеристики, включая доступное оборудование. Например: {"equipment": ["monitor", "docking_station"]}']
+
+  indexes {
+    (name, section_id) [unique, name: 'coworking_places_name_section_key']
+  }
 }
 
 Table bookings [note: 'Бронирования.'] {
