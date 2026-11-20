@@ -39,9 +39,7 @@ CREATE TABLE tariff_prices (
 
 CREATE TABLE coworking_sections (
     section_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT NOT NULL,
-    building TEXT NOT NULL,
-    floor INTEGER NOT NULL
+    name TEXT NOT NULL
 );
 
 CREATE TABLE section_tariff_assignments (
